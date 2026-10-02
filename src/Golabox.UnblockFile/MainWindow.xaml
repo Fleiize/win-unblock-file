@@ -1,0 +1,195 @@
+<ui:FluentWindow x:Class="Golabox.UnblockFile.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="Unblock File"
+                 Width="620" Height="800" MinWidth="500" MinHeight="560"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica"
+                 WindowCornerPreference="Round"
+                 WindowStartupLocation="CenterScreen"
+                 Icon="pack://application:,,,/Assets/app.ico"
+                 AllowDrop="True"
+                 PreviewDragEnter="Window_PreviewDragOver"
+                 PreviewDragOver="Window_PreviewDragOver"
+                 PreviewDragLeave="Window_PreviewDragLeave"
+                 PreviewDrop="Window_PreviewDrop">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="Unblock File" ShowMaximize="False" />
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="28,4,28,24">
+
+                <!-- En-tête -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                    <ui:SymbolIcon Symbol="LockOpen24" FontSize="40" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="Débloquer des fichiers" FontSize="24" FontWeight="SemiBold" />
+                        <TextBlock Text="Réactivez l’aperçu Windows des fichiers que vous jugez fiables."
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" Margin="0,2,0,0" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Zone de dépôt / carte de sélection -->
+                <Grid x:Name="DropZone" MinHeight="230">
+                    <Rectangle x:Name="DropOutline" RadiusX="8" RadiusY="8" StrokeThickness="1.5"
+                               StrokeDashArray="4 3"
+                               Stroke="{DynamicResource ControlStrongStrokeColorDefaultBrush}"
+                               Fill="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+
+                    <StackPanel Margin="24" VerticalAlignment="Center">
+
+                        <!-- Rien de sélectionné -->
+                        <StackPanel x:Name="EmptyPanel" HorizontalAlignment="Center">
+                            <ui:SymbolIcon Symbol="FolderOpen24" FontSize="44" HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Text="Glissez un fichier ou un dossier ici" FontSize="18" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" Margin="0,12,0,0" TextWrapping="Wrap" TextAlignment="Center" />
+                            <TextBlock Text="ou choisissez-le sur votre ordinateur"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        </StackPanel>
+
+                        <!-- Élément sélectionné -->
+                        <StackPanel x:Name="SelectionPanel" Visibility="Collapsed">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ui:SymbolIcon x:Name="SelectionIcon" Symbol="Document24" FontSize="40" VerticalAlignment="Top"
+                                               Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                <StackPanel Grid.Column="1" Margin="14,0,8,0">
+                                    <TextBlock x:Name="NameText" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="PathText" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap" FontSize="12" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
+                                    <ui:Button x:Name="ExplorerButton" Icon="{ui:SymbolIcon FolderOpen24}" Appearance="Transparent"
+                                               Padding="8" ToolTip="Afficher dans l’Explorateur"
+                                               AutomationProperties.Name="Afficher dans l’Explorateur" Click="ShowInExplorer_Click" />
+                                    <ui:Button x:Name="RescanButton" Icon="{ui:SymbolIcon ArrowClockwise24}" Appearance="Transparent"
+                                               Padding="8" ToolTip="Analyser à nouveau"
+                                               AutomationProperties.Name="Analyser à nouveau" Click="Rescan_Click" />
+                                    <ui:Button x:Name="ClearButton" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Transparent"
+                                               Padding="8" ToolTip="Effacer la sélection"
+                                               AutomationProperties.Name="Effacer la sélection" Click="Clear_Click" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Separator Margin="0,14" />
+
+                            <StackPanel Orientation="Horizontal">
+                                <ui:ProgressRing x:Name="ScanRing" IsIndeterminate="True" Width="22" Height="22"
+                                                 Margin="0,0,10,0" VerticalAlignment="Center" Visibility="Collapsed" />
+                                <TextBlock x:Name="StatusText" FontSize="16" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" TextWrapping="Wrap" />
+                                <ui:Button x:Name="CancelScanButton" Content="Annuler" Margin="14,0,0,0"
+                                           Visibility="Collapsed" Click="CancelScan_Click" />
+                            </StackPanel>
+                            <TextBlock x:Name="DetailText" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                            <ui:ToggleSwitch x:Name="SubfoldersToggle" Content="Inclure les sous-dossiers"
+                                             Margin="0,14,0,0" Visibility="Collapsed"
+                                             Checked="SubfoldersToggle_Changed" Unchecked="SubfoldersToggle_Changed" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
+                            <ui:Button x:Name="BrowseFileButton" Content="Parcourir un fichier" Icon="{ui:SymbolIcon Document24}"
+                                       Click="BrowseFile_Click" />
+                            <ui:Button x:Name="BrowseFolderButton" Content="Parcourir un dossier" Icon="{ui:SymbolIcon Folder24}"
+                                       Margin="10,0,0,0" Click="BrowseFolder_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Avertissements / informations -->
+                <ui:InfoBar x:Name="RiskBar" Severity="Warning" IsOpen="False" IsClosable="False"
+                            Title="Attention" Margin="0,14,0,0" />
+                <ui:InfoBar x:Name="NoteBar" Severity="Informational" IsOpen="False" IsClosable="False"
+                            Margin="0,14,0,0" />
+
+                <!-- Action principale -->
+                <ui:Button x:Name="UnblockButton" Appearance="Primary" Icon="{ui:SymbolIcon LockOpen24}"
+                           Content="Débloquer" FontSize="16" FontWeight="SemiBold"
+                           HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                           Height="48" Margin="0,18,0,0" IsEnabled="False" IsDefault="True" Click="Unblock_Click" />
+
+                <!-- Résultat -->
+                <ui:InfoBar x:Name="ResultBar" IsOpen="False" IsClosable="False" Margin="0,14,0,0" />
+                <ui:Button x:Name="ShowErrorsButton" Content="Voir les erreurs" Margin="0,6,0,0"
+                           Visibility="Collapsed" Click="ShowErrors_Click" />
+
+                <TextBlock Text="Débloquez uniquement des fichiers dont vous connaissez et acceptez la provenance. Retirer le marqueur d’Internet ne vérifie pas le fichier : ce n’est pas une analyse antivirus."
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
+                           TextWrapping="Wrap" Margin="2,14,2,0" />
+
+                <!-- Informations avancées -->
+                <ui:CardExpander x:Name="AdvancedExpander" Header="Informations avancées" IsExpanded="False" Margin="0,20,0,0">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="4" Text="Durée de l’analyse" Margin="0,0,24,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="AdvDuration" Text="—" />
+                            <TextBlock Grid.Row="5" Text="Version" Margin="0,0,24,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" x:Name="AdvVersion" Text="—" />
+                            <TextBlock Grid.Row="0" Text="Type de sélection" Margin="0,0,24,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="AdvKind" Text="—" />
+                            <TextBlock Grid.Row="1" Text="Fichiers trouvés" Margin="0,0,24,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="AdvTotal" Text="—" />
+                            <TextBlock Grid.Row="2" Text="Avec Zone.Identifier" Margin="0,0,24,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="AdvBlocked" Text="—" />
+                            <TextBlock Grid.Row="3" Text="Erreurs d’analyse" Margin="0,0,24,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="AdvErrors" Text="—" />
+                        </Grid>
+
+                        <TextBlock Text="Commande PowerShell équivalente" Margin="0,14,0,6" FontWeight="SemiBold" />
+                        <TextBox x:Name="CommandBox" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas"
+                                 MaxHeight="120" VerticalScrollBarVisibility="Auto"
+                                 AutomationProperties.Name="Commande PowerShell équivalente" />
+                        <TextBlock Text="Donnée à titre d’information : l’application n’utilise pas PowerShell, elle retire directement le flux Zone.Identifier, uniquement des fichiers réellement marqués (repérés par l’analyse)."
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
+                                   TextWrapping="Wrap" Margin="0,6,0,0" />
+                        <ui:Button x:Name="CopyCommandButton" Content="Copier la commande" Icon="{ui:SymbolIcon Copy24}"
+                                   Margin="0,8,0,0" IsEnabled="False" Click="CopyCommand_Click" />
+
+                        <TextBlock Text="Journal" Margin="0,18,0,6" FontWeight="SemiBold" />
+                        <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="NoWrap" FontFamily="Consolas"
+                                 MinHeight="70" MaxHeight="180" AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                 AutomationProperties.Name="Journal détaillé" />
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <ui:Button x:Name="CopyReportButton" Content="Copier le rapport" Icon="{ui:SymbolIcon Copy24}"
+                                       IsEnabled="False" Click="CopyReport_Click" />
+                            <ui:Button x:Name="CopyDiagnosticButton" Content="Copier le diagnostic" Icon="{ui:SymbolIcon Stethoscope24}"
+                                       Margin="8,0,0,0" Click="CopyDiagnostic_Click"
+                                       ToolTip="Informations techniques de la session (version, Windows, erreurs). Rien n’est envoyé : copie locale uniquement." />
+                        </StackPanel>
+
+                        <TextBlock Margin="0,18,0,0" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                            <Run x:Name="AboutRun" Text="Unblock File · Golabox · Licence MIT · " />
+                            <Hyperlink NavigateUri="https://github.com/Golabox/win-unblock-file" RequestNavigate="Link_RequestNavigate">GitHub</Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+                </ui:CardExpander>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</ui:FluentWindow>

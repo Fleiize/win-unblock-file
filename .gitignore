@@ -1,0 +1,38 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.rsuser
+*.log
+TestResults/
+*.nupkg
+project.lock.json
+artifacts/
+
+## Visual Studio
+.vs/
+*.vsidx
+*.VC.db
+*.[Rr]e[Ss]harper
+_ReSharper*/
+*.DotSettings.user
+
+## JetBrains Rider
+.idea/
+*.sln.iml
+
+## VS Code
+.vscode/
+
+## Publication locale
+dist/
+publish/
+
+## Windows
+Thumbs.db
+Desktop.ini
+
+## Raccourci recréé par publish.ps1
+*.lnk
