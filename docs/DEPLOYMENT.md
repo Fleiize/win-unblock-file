@@ -14,6 +14,8 @@ dotnet test -c Release
 - produit `dist\UnblockFile-win-x64\` (`UnblockFile.exe`, `README.md`, `LICENSE`) et `dist\UnblockFile-win-x64.zip` ;
 - crée ou met à jour `Unblock File.lnk` à la racine. Il cible `dist\UnblockFile-win-x64\UnblockFile.exe`, avec ce même dossier comme répertoire de travail et l'icône de l'EXE. Glisser des fichiers sur ce raccourci les sélectionne.
 
+Le raccourci garde une cible stable ; c'est `publish.ps1` qui remplace l'EXE à cette cible. **À relancer après toute modification à tester** (build + tests + `publish.ps1`), puis vérifier sur `dist\UnblockFile-win-x64\UnblockFile.exe` ou via le raccourci, jamais sur `bin\`.
+
 `dist/` et `*.lnk` ne sont pas versionnés.
 
 ## GitHub Release

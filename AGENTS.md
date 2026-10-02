@@ -22,6 +22,12 @@ dotnet test -c Release       # tests (xUnit)
 - Pas de télémétrie, réseau, logs sur disque, base de données, compte ou auto-update.
 - Éviter toute dépendance supplémentaire. Architecture légère : code-behind pour l'UI, logique testable dans `Services/`.
 
+## Livraison (obligatoire pour toute modif fonctionnelle ou UX à tester)
+1. `dotnet build -c Release` → 2. `dotnet test -c Release` → 3. `./publish.ps1` → 4. vérification sur `dist\UnblockFile-win-x64\UnblockFile.exe` (ou `Unblock File.lnk`).
+- Un simple `dotnet build` n'est **pas** une livraison : le raccourci racine lance l'EXE de `dist`, qui n'est mis à jour que par `publish.ps1`.
+- Ne jamais demander à l'utilisateur de tester tant que `publish.ps1` n'a pas été exécuté après les dernières modifications.
+- Vérification visuelle : toujours l'EXE de `dist`, jamais un EXE de `bin/`.
+
 ## Après une évolution
 - Mettre à jour `PROJECT_STATE.md` (état réel, nombre de tests, limites).
 - Documenter toute décision structurante dans `docs/DECISIONS.md`.
