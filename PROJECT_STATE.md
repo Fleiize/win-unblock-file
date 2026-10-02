@@ -9,7 +9,9 @@
 - Déblocage **direct en C#** par suppression du flux `Zone.Identifier`. **Aucun processus PowerShell** au runtime.
 - Statut par fichier ; une erreur n'arrête jamais le lot ; recomptage réel après traitement.
 - Avertissement et confirmation pour les extensions actives/exécutables ; information pour les partages réseau (UNC / lecteur mappé).
-- Deux états de carte : **vide** (grande zone de dépôt + boutons « Parcourir un ou plusieurs fichiers » / « Parcourir un dossier ») et **sélection** (carte compacte, sans boutons Parcourir ; la croix « Effacer la sélection » ramène à l'état vide). Après un déblocage réussi : « Ce fichier n'est plus bloqué » et notification de succès fermable, qui disparaît seule après 7 s (jamais les avertissements ni les erreurs).
+- Deux états de carte : **vide** (grande zone de dépôt + boutons « Ajouter un ou plusieurs fichiers » / « Ajouter un dossier ») et **sélection** (carte compacte ; la croix « Effacer la sélection » ramène à l'état vide). Le bouton « Débloquer » n'est visible que lorsqu'une sélection existe.
+- **Flux à la chaîne** : après un **succès complet** (aucun échec et ré-analyse sans fichier bloqué ni erreur), la sélection est vidée automatiquement, l'écran revient à l'accueil et une notification « Fichier débloqué avec succès » (fermable, disparaît après 7 s) s'affiche. Au moindre échec, la sélection, l'avertissement, « Voir les erreurs » et les détails restent affichés.
+- **« Débloqués cette session »** : liste **strictement volatile** (simple `ObservableCollection` en mémoire, jamais persistée, vide à chaque lancement), masquée tant qu'aucun déblocage n'a réussi, avec action « Afficher dans l'Explorateur » par ligne (jamais d'ouverture) et « Effacer » (vide seulement la liste). Règle : sélection explicite de fichiers → une ligne par fichier débloqué (max 25, puis une ligne « Autres fichiers » de résumé) ; dossier → **une seule** ligne de résumé (« N fichiers débloqués »). Les fichiers débloqués lors d'un succès partiel y sont aussi ajoutés. Logique testable dans `Services/SessionHistory.cs` ; 200 lignes maximum.
 - Actions de carte : Afficher dans l'Explorateur (`/select`, n'ouvre jamais le fichier), Analyser à nouveau, Effacer.
 - Informations avancées (fermées par défaut) : type, fichiers examinés/marqués, erreurs, durée, version, commande PowerShell équivalente (informative), « Copier la commande », « Copier le rapport », « Copier le diagnostic », lien GitHub.
 - Diagnostic de session **en mémoire** ; filet anti-crash avec message simple et copie des détails.
@@ -18,7 +20,7 @@
 
 ## Qualité
 - Build Release : 0 erreur, 0 avertissement.
-- Tests : **42/42** (xUnit, sur de vrais fichiers NTFS temporaires).
+- Tests : **48/48** (xUnit, sur de vrais fichiers NTFS temporaires).
 
 ## Livraison
 - `./publish.ps1` génère `dist\UnblockFile-win-x64\UnblockFile.exe` (single-file compressé, self-contained, environ 61 Mo) et `dist\UnblockFile-win-x64.zip`.
@@ -34,4 +36,4 @@
 - Chemins très longs : gérés via le manifeste `longPathAware`, mais non testés.
 
 ## Prochaine action
-Validation manuelle finale de l'interface par l'utilisateur.
+Validation manuelle finale de l'interface par l'utilisateur (flux à la chaîne et liste de session).

@@ -51,16 +51,16 @@
                         <StackPanel x:Name="EmptyPanel" HorizontalAlignment="Center">
                             <ui:SymbolIcon Symbol="FolderOpen24" FontSize="44" HorizontalAlignment="Center"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="Glissez un fichier ou un dossier ici" FontSize="18" FontWeight="SemiBold"
+                            <TextBlock Text="Glissez des fichiers ou un dossier ici" FontSize="18" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" Margin="0,12,0,0" TextWrapping="Wrap" TextAlignment="Center" />
-                            <TextBlock Text="ou choisissez-le sur votre ordinateur"
+                            <TextBlock Text="ou ajoutez-les depuis votre ordinateur"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        HorizontalAlignment="Center" Margin="0,4,0,0" />
 
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
-                                <ui:Button x:Name="BrowseFileButton" Content="Parcourir un ou plusieurs fichiers" Icon="{ui:SymbolIcon Document24}"
+                                <ui:Button x:Name="BrowseFileButton" Content="Ajouter un ou plusieurs fichiers" Icon="{ui:SymbolIcon Document24}"
                                            Click="BrowseFile_Click" />
-                                <ui:Button x:Name="BrowseFolderButton" Content="Parcourir un dossier" Icon="{ui:SymbolIcon Folder24}"
+                                <ui:Button x:Name="BrowseFolderButton" Content="Ajouter un dossier" Icon="{ui:SymbolIcon Folder24}"
                                            Margin="10,0,0,0" Click="BrowseFolder_Click" />
                             </StackPanel>
                         </StackPanel>
@@ -123,14 +123,68 @@
                 <ui:Button x:Name="UnblockButton" Appearance="Primary" Icon="{ui:SymbolIcon LockOpen24}"
                            Content="Débloquer" FontSize="16" FontWeight="SemiBold"
                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                           Height="48" Margin="0,18,0,0" IsEnabled="False" IsDefault="True" Click="Unblock_Click" />
+                           Height="48" Margin="0,18,0,0" IsEnabled="False" IsDefault="True" Visibility="Collapsed"
+                           Click="Unblock_Click" />
 
                 <!-- Résultat -->
                 <ui:InfoBar x:Name="ResultBar" IsOpen="False" IsClosable="False" Margin="0,14,0,0" />
                 <ui:Button x:Name="ShowErrorsButton" Content="Voir les erreurs" Margin="0,6,0,0"
                            Visibility="Collapsed" Click="ShowErrors_Click" />
 
-                <TextBlock Text="Débloquez uniquement des fichiers dont vous connaissez et acceptez la provenance. Retirer le marqueur d’Internet ne vérifie pas le fichier : ce n’est pas une analyse antivirus."
+                <!-- Débloqués cette session : liste en mémoire uniquement, jamais enregistrée -->
+                <StackPanel x:Name="SessionPanel" Margin="0,22,0,0" Visibility="Collapsed">
+                    <Grid>
+                        <TextBlock Text="Débloqués cette session" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <ui:Button x:Name="ClearSessionButton" Content="Effacer" Appearance="Transparent"
+                                   HorizontalAlignment="Right" Padding="8,3"
+                                   ToolTip="Vider cette liste (aucun fichier n’est modifié)"
+                                   AutomationProperties.Name="Effacer la liste des fichiers débloqués cette session"
+                                   Click="ClearSession_Click" />
+                    </Grid>
+                    <ItemsControl x:Name="SessionList" Margin="0,4,0,0" KeyboardNavigation.TabNavigation="Continue">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:SymbolIcon Symbol="CheckmarkCircle24" Filled="True" FontSize="20"
+                                                   VerticalAlignment="Center" Margin="2,0,12,0"
+                                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}"
+                                                   ToolTip="Débloqué" AutomationProperties.Name="Débloqué" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding Title}" />
+                                        <TextBlock Text="{Binding Subtitle}" FontSize="12" TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Subtitle}" Value="{x:Null}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding Path}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                   ToolTip="{Binding Path}" />
+                                    </StackPanel>
+                                    <ui:Button Grid.Column="2" Icon="{ui:SymbolIcon FolderOpen24}" Appearance="Transparent"
+                                               Padding="8" Margin="8,0,0,0" VerticalAlignment="Center"
+                                               ToolTip="Afficher dans l’Explorateur"
+                                               AutomationProperties.Name="Afficher dans l’Explorateur"
+                                               Click="SessionShowInExplorer_Click" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <TextBlock Text="Débloquez uniquement des fichiers dont vous connaissez la provenance. Cette action retire une protection Windows mais n’analyse pas le fichier."
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
                            TextWrapping="Wrap" Margin="2,14,2,0" />
 

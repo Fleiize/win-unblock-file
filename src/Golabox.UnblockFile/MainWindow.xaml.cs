@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Text;
@@ -22,6 +23,12 @@ public partial class MainWindow : FluentWindow
     private ScanResult? _scan;
     private IReadOnlyList<FileResult>? _results;
     private string? _note;
+
+    // « Débloqués cette session » : strictement en mémoire, jamais persisté, vide à chaque lancement.
+    private readonly ObservableCollection<SessionEntry> _session = [];
+
+    // Confirmation temporaire après un succès complet (la sélection a alors déjà été vidée).
+    private string? _toast;
 
     private bool _scanning;
     private bool _unblocking;
@@ -50,6 +57,7 @@ public partial class MainWindow : FluentWindow
             _successDismissed = true;
             ResultBar.IsOpen = false;
         };
+        SessionList.ItemsSource = _session;
         AdvVersion.Text = SessionDiagnostics.Version;
         AboutRun.Text = $"Unblock File {SessionDiagnostics.Version} · Golabox · Licence MIT · ";
         Refresh();
@@ -76,6 +84,7 @@ public partial class MainWindow : FluentWindow
         _selection = selection;
         _scan = null;
         _results = null;
+        _toast = null;
         _note = selection.Note;
         SessionDiagnostics.Log($"Sélection : {DescribeKind()} — {string.Join(" | ", selection.Paths.Take(5))}{(selection.Paths.Count > 5 ? " | …" : "")}");
 
@@ -89,6 +98,12 @@ public partial class MainWindow : FluentWindow
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
         if (_unblocking) return;
+        ResetSelection();
+    }
+
+    /// <summary>Retour à l'état d'accueil : la sélection active est vidée, la liste de session est conservée.</summary>
+    private void ResetSelection()
+    {
         _scanCts?.Cancel();
         _scanId++;
         _selection = null;
@@ -98,6 +113,12 @@ public partial class MainWindow : FluentWindow
         _scanning = false;
         Refresh();
         BrowseFileButton.Focus();
+    }
+
+    private void ClearSession_Click(object sender, RoutedEventArgs e)
+    {
+        _session.Clear();
+        Refresh();
     }
 
     private void Rescan_Click(object sender, RoutedEventArgs e) => _ = ScanAsync();
@@ -124,9 +145,18 @@ public partial class MainWindow : FluentWindow
     private void ShowInExplorer_Click(object sender, RoutedEventArgs e)
     {
         if (_selection is null) return;
-        var target = _selection.Paths[0];
+        OpenInExplorer(_selection.Paths[0], _selection.IsDirectory);
+    }
+
+    private void SessionShowInExplorer_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is SessionEntry entry) OpenInExplorer(entry.Path, entry.IsFolder);
+    }
+
+    private void OpenInExplorer(string target, bool isDirectory)
+    {
         // Les noms de fichiers Windows ne peuvent pas contenir de guillemets : la mise entre guillemets est sûre.
-        var arguments = _selection.IsDirectory ? $"\"{target}\"" : $"/select,\"{target}\"";
+        var arguments = isDirectory ? $"\"{target}\"" : $"/select,\"{target}\"";
         try
         {
             Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), arguments)
@@ -246,7 +276,21 @@ public partial class MainWindow : FluentWindow
             _unblocking = false;
             LogResults(_results, stopwatch.Elapsed);
 
+            var results = _results;
+            var selection = _selection;
+            if (selection is not null) SessionHistory.Push(_session, SessionHistory.BuildEntries(selection, results));
+
             await ScanAsync(keepResult: true); // recompte réel après déblocage
+
+            // Succès complet confirmé par la ré-analyse : retour à l'accueil, prêt pour la suite.
+            // Au moindre échec, la sélection et les erreurs restent affichées pour le diagnostic.
+            if (ReferenceEquals(_selection, selection) && _scan is { } rescan && SessionHistory.IsCompleteSuccess(results, rescan))
+            {
+                _toast = SuccessTitle(results.Count(r => r.Status == FileStatus.Unblocked));
+                _successDismissed = false;
+                SessionDiagnostics.Log("Succès complet : retour à l’accueil.");
+                ResetSelection();
+            }
         }
         catch (Exception ex)
         {
@@ -274,7 +318,7 @@ public partial class MainWindow : FluentWindow
             Title = "Confirmer le déblocage",
             Content = $"{(count == 1 ? "1 fichier à débloquer est" : $"{count} fichiers à débloquer sont")} exécutable(s) ou susceptible(s) de contenir du contenu actif " +
                       "(.exe, .msi, .ps1, .docm…). Leur déblocage peut réduire certaines protections Windows.\n\n" +
-                      "Débloquez uniquement des fichiers dont vous connaissez et acceptez la provenance.",
+                      "Débloquez uniquement des fichiers dont vous connaissez la provenance.",
             PrimaryButtonText = "Débloquer quand même",
             CloseButtonText = "Annuler",
             Owner = this,
@@ -295,6 +339,10 @@ public partial class MainWindow : FluentWindow
         SelectionPanel.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
         DropOutline.StrokeDashArray = has ? null : [4, 3];
         DropZone.MinHeight = has ? 0 : 230; // grande zone d'accueil si vide, carte compacte sinon
+
+        UnblockButton.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
+        SessionPanel.Visibility = _session.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ClearSessionButton.IsEnabled = !_unblocking;
 
         BrowseFileButton.IsEnabled = BrowseFolderButton.IsEnabled = !_unblocking;
         ClearButton.IsEnabled = RescanButton.IsEnabled = !_unblocking;
@@ -361,7 +409,7 @@ public partial class MainWindow : FluentWindow
             if ((IsDirectory || multi) && s.ExaminedCount > 0)
                 detail = $"{Files(s.ExaminedCount)} {(IsDirectory ? "trouvé" : "examiné")}{(s.ExaminedCount > 1 ? "s" : "")} · {blocked:N0} marqué{(blocked > 1 ? "s" : "")} comme provenant d’Internet";
             else if (blocked > 0)
-                detail = "Marqué comme provenant d’Internet (Zone.Identifier)";
+                detail = "Marqué comme provenant d’Internet";
             if (s.Canceled && blocked > 0) detail += " · résultat partiel";
             if (s.Errors.Count > 0)
                 detail += (detail.Length > 0 ? " · " : "") + $"{s.Errors.Count} erreur{(s.Errors.Count > 1 ? "s" : "")} d’analyse (voir Informations avancées)";
@@ -373,7 +421,7 @@ public partial class MainWindow : FluentWindow
             }
             else
             {
-                button = "Aucun fichier bloqué";
+                button = "Aucun fichier à débloquer";
             }
         }
 
@@ -422,12 +470,12 @@ public partial class MainWindow : FluentWindow
             else if (done > 0)
             {
                 ResultBar.Severity = InfoBarSeverity.Success;
-                ResultBar.Title = done == 1 ? "Fichier débloqué avec succès" : $"{FilesUnblocked(done)} avec succès";
+                ResultBar.Title = SuccessTitle(done);
             }
             else
             {
                 ResultBar.Severity = InfoBarSeverity.Informational;
-                ResultBar.Title = already == 1 ? "Ce fichier n’avait plus de marqueur" : "Ces fichiers n’avaient plus de marqueur";
+                ResultBar.Title = already == 1 ? "Ce fichier n’était déjà plus bloqué" : "Ces fichiers n’étaient déjà plus bloqués";
             }
             ResultBar.Message = "";
 
@@ -441,6 +489,18 @@ public partial class MainWindow : FluentWindow
             }
             else _successTimer.Stop();
             ShowErrorsButton.Visibility = failed > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+        else if (_toast is not null && !_unblocking)
+        {
+            // Succès complet : la sélection est déjà vidée, seule reste cette confirmation temporaire.
+            ResultBar.Severity = InfoBarSeverity.Success;
+            ResultBar.Title = _toast;
+            ResultBar.Message = "";
+            ResultBar.IsClosable = true;
+            ResultBar.IsOpen = !_successDismissed;
+            if (ResultBar.IsOpen) { if (!_successTimer.IsEnabled) _successTimer.Start(); }
+            else _successTimer.Stop();
+            ShowErrorsButton.Visibility = Visibility.Collapsed;
         }
         else
         {
@@ -557,6 +617,8 @@ public partial class MainWindow : FluentWindow
     // ───────────── Textes ─────────────
 
     private static string Files(int n) => n <= 1 ? $"{n} fichier" : $"{n:N0} fichiers";
+
+    private static string SuccessTitle(int done) => done == 1 ? "Fichier débloqué avec succès" : $"{FilesUnblocked(done)} avec succès";
 
     private static string FilesUnblocked(int n) => n <= 1 ? $"{n} fichier débloqué" : $"{n:N0} fichiers débloqués";
 }
