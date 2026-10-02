@@ -23,7 +23,7 @@
 - `./publish.ps1` génère `dist\UnblockFile-win-x64\UnblockFile.exe` (single-file compressé, self-contained, environ 61 Mo) et `dist\UnblockFile-win-x64.zip`.
 - `Unblock File.lnk` (racine, non versionné), (re)créé par `publish.ps1`, pointe vers `dist\UnblockFile-win-x64\UnblockFile.exe`.
 - Démarrage : environ 1 s à chaud. Le premier lancement d'un nouvel EXE a pris environ 30 s (vraisemblablement l'antivirus), quel que soit le format.
-- GitHub : https://github.com/Golabox/win-unblock-file, Release `v0.1.0` avec le ZIP (voir docs/DEPLOYMENT.md).
+- GitHub : https://github.com/Fleiize/win-unblock-file, Release `v0.1.0` avec le ZIP (voir docs/DEPLOYMENT.md). Le dépôt est publié sous Fleiize car le compte golabox n'était pas connecté dans `gh`. Cible prévue : transfert vers `golabox` (GitHub redirige automatiquement les anciennes URLs).
 
 ## Limites connues
 - Pas de mélange dossier + fichiers, ni de plusieurs dossiers dans une même sélection.

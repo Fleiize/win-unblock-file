@@ -185,7 +185,7 @@
                         <TextBlock Margin="0,18,0,0" FontSize="12" TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                             <Run x:Name="AboutRun" Text="Unblock File · Golabox · Licence MIT · " />
-                            <Hyperlink NavigateUri="https://github.com/Golabox/win-unblock-file" RequestNavigate="Link_RequestNavigate">GitHub</Hyperlink>
+                            <Hyperlink NavigateUri="https://github.com/Fleiize/win-unblock-file" RequestNavigate="Link_RequestNavigate">GitHub</Hyperlink>
                         </TextBlock>
                     </StackPanel>
                 </ui:CardExpander>

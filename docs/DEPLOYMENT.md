@@ -18,6 +18,6 @@ dotnet test -c Release
 
 ## GitHub Release
 ```powershell
-gh release create vX.Y.Z dist\UnblockFile-win-x64.zip --repo Golabox/win-unblock-file --title "Unblock File vX.Y.Z" --notes "..."
+gh release create vX.Y.Z dist\UnblockFile-win-x64.zip --repo Fleiize/win-unblock-file --title "Unblock File vX.Y.Z" --notes "..."
 ```
 Mettre d'abord à jour `<Version>` dans `src/Golabox.UnblockFile/Golabox.UnblockFile.csproj`. Ne jamais réécrire un tag existant.

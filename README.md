@@ -29,7 +29,7 @@ L'application ne modifie que le flux `Zone.Identifier` des fichiers choisis. Ell
 
 ## Télécharger
 
-Prenez `UnblockFile-win-x64.zip` dans les [Releases](https://github.com/Golabox/win-unblock-file/releases), décompressez-le et lancez `UnblockFile.exe`. .NET n'a pas besoin d'être installé. Le premier lancement peut être plus lent pendant l'analyse antivirus du nouvel EXE.
+Prenez `UnblockFile-win-x64.zip` dans les [Releases](https://github.com/Fleiize/win-unblock-file/releases), décompressez-le et lancez `UnblockFile.exe`. .NET n'a pas besoin d'être installé. Le premier lancement peut être plus lent pendant l'analyse antivirus du nouvel EXE.
 
 ## Compiler et publier
 
