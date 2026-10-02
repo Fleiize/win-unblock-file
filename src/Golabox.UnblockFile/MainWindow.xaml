@@ -23,7 +23,7 @@
 
         <ui:TitleBar Grid.Row="0" Title="Unblock File" ShowMaximize="False" />
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer x:Name="PageScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="28,4,28,24">
 
                 <!-- En-tête -->
@@ -134,14 +134,17 @@
                 <!-- Débloqués cette session : liste en mémoire uniquement, jamais enregistrée -->
                 <StackPanel x:Name="SessionPanel" Margin="0,22,0,0" Visibility="Collapsed">
                     <Grid>
-                        <TextBlock Text="Débloqués cette session" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <TextBlock x:Name="SessionTitle" Text="Débloqués cette session" FontWeight="SemiBold" VerticalAlignment="Center" />
                         <ui:Button x:Name="ClearSessionButton" Content="Effacer" Appearance="Transparent"
                                    HorizontalAlignment="Right" Padding="8,3"
                                    ToolTip="Vider cette liste (aucun fichier n’est modifié)"
                                    AutomationProperties.Name="Effacer la liste des fichiers débloqués cette session"
                                    Click="ClearSession_Click" />
                     </Grid>
-                    <ItemsControl x:Name="SessionList" Margin="0,4,0,0" KeyboardNavigation.TabNavigation="Continue">
+                    <!-- Hauteur bornée (~5-6 lignes) : au-delà, la liste défile seule. -->
+                    <ScrollViewer x:Name="SessionScroll" Margin="0,4,0,0" MaxHeight="220"
+                                  VerticalScrollBarVisibility="Auto" PreviewMouseWheel="SessionScroll_PreviewMouseWheel">
+                    <ItemsControl x:Name="SessionList" Margin="0,0,6,0" KeyboardNavigation.TabNavigation="Continue">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid Margin="0,0,0,2">
@@ -182,6 +185,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    </ScrollViewer>
                 </StackPanel>
 
                 <TextBlock Text="Débloquez uniquement des fichiers dont vous connaissez la provenance. Cette action retire une protection Windows mais n’analyse pas le fichier."

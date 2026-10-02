@@ -58,6 +58,7 @@ public partial class MainWindow : FluentWindow
             ResultBar.IsOpen = false;
         };
         SessionList.ItemsSource = _session;
+        _session.CollectionChanged += (_, _) => SessionTitle.Text = $"Débloqués cette session · {_session.Count}";
         AdvVersion.Text = SessionDiagnostics.Version;
         AboutRun.Text = $"Unblock File {SessionDiagnostics.Version} · Golabox · Licence MIT · ";
         Refresh();
@@ -113,6 +114,24 @@ public partial class MainWindow : FluentWindow
         _scanning = false;
         Refresh();
         BrowseFileButton.Focus();
+    }
+
+    /// <summary>
+    /// Molette : la liste défile seule tant qu'elle peut encore défiler dans le sens demandé ;
+    /// en butée (ou sans débordement), le geste est transmis à la page pour ne pas la « bloquer ».
+    /// </summary>
+    private void SessionScroll_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    {
+        var scroll = SessionScroll;
+        bool atLimit = e.Delta > 0 ? scroll.VerticalOffset <= 0 : scroll.VerticalOffset >= scroll.ScrollableHeight;
+        if (!atLimit) return;
+
+        e.Handled = true;
+        PageScroll.RaiseEvent(new System.Windows.Input.MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = UIElement.MouseWheelEvent,
+            Source = sender,
+        });
     }
 
     private void ClearSession_Click(object sender, RoutedEventArgs e)
