@@ -32,7 +32,7 @@
                                    Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
                     <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="Débloquer des fichiers" FontSize="24" FontWeight="SemiBold" />
-                        <TextBlock Text="Réactivez l’aperçu Windows des fichiers que vous jugez fiables."
+                        <TextBlock Text="Réactivez l’aperçu Windows de vos fichiers téléchargés."
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap" Margin="0,2,0,0" />
                     </StackPanel>
@@ -56,6 +56,13 @@
                             <TextBlock Text="ou choisissez-le sur votre ordinateur"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        HorizontalAlignment="Center" Margin="0,4,0,0" />
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
+                                <ui:Button x:Name="BrowseFileButton" Content="Parcourir un ou plusieurs fichiers" Icon="{ui:SymbolIcon Document24}"
+                                           Click="BrowseFile_Click" />
+                                <ui:Button x:Name="BrowseFolderButton" Content="Parcourir un dossier" Icon="{ui:SymbolIcon Folder24}"
+                                           Margin="10,0,0,0" Click="BrowseFolder_Click" />
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- Élément sélectionné -->
@@ -102,13 +109,6 @@
                             <ui:ToggleSwitch x:Name="SubfoldersToggle" Content="Inclure les sous-dossiers"
                                              Margin="0,14,0,0" Visibility="Collapsed"
                                              Checked="SubfoldersToggle_Changed" Unchecked="SubfoldersToggle_Changed" />
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
-                            <ui:Button x:Name="BrowseFileButton" Content="Parcourir un fichier" Icon="{ui:SymbolIcon Document24}"
-                                       Click="BrowseFile_Click" />
-                            <ui:Button x:Name="BrowseFolderButton" Content="Parcourir un dossier" Icon="{ui:SymbolIcon Folder24}"
-                                       Margin="10,0,0,0" Click="BrowseFolder_Click" />
                         </StackPanel>
                     </StackPanel>
                 </Grid>

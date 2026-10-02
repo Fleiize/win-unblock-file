@@ -9,6 +9,7 @@
 - Déblocage **direct en C#** par suppression du flux `Zone.Identifier`. **Aucun processus PowerShell** au runtime.
 - Statut par fichier ; une erreur n'arrête jamais le lot ; recomptage réel après traitement.
 - Avertissement et confirmation pour les extensions actives/exécutables ; information pour les partages réseau (UNC / lecteur mappé).
+- Deux états de carte : **vide** (grande zone de dépôt + boutons « Parcourir un ou plusieurs fichiers » / « Parcourir un dossier ») et **sélection** (carte compacte, sans boutons Parcourir ; la croix « Effacer la sélection » ramène à l'état vide). Après un déblocage réussi : « Ce fichier n'est plus bloqué » et notification de succès fermable, qui disparaît seule après 7 s (jamais les avertissements ni les erreurs).
 - Actions de carte : Afficher dans l'Explorateur (`/select`, n'ouvre jamais le fichier), Analyser à nouveau, Effacer.
 - Informations avancées (fermées par défaut) : type, fichiers examinés/marqués, erreurs, durée, version, commande PowerShell équivalente (informative), « Copier la commande », « Copier le rapport », « Copier le diagnostic », lien GitHub.
 - Diagnostic de session **en mémoire** ; filet anti-crash avec message simple et copie des détails.

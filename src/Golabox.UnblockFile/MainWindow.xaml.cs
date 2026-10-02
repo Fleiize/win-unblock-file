@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.ComponentModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Golabox.UnblockFile.Models;
 using Golabox.UnblockFile.Services;
 using Microsoft.Win32;
@@ -29,6 +31,10 @@ public partial class MainWindow : FluentWindow
     private CancellationTokenSource? _scanCts;
     private bool _suppressToggle;
 
+    // Le succès pur disparaît seul ; avertissements et erreurs restent affichés.
+    private readonly DispatcherTimer _successTimer = new() { Interval = TimeSpan.FromSeconds(7) };
+    private bool _successDismissed;
+
     private bool IsDirectory => _selection?.IsDirectory == true;
 
     public MainWindow(IReadOnlyList<string>? startupPaths = null)
@@ -36,6 +42,14 @@ public partial class MainWindow : FluentWindow
         ApplicationThemeManager.ApplySystemTheme();
         InitializeComponent();
         SystemThemeWatcher.Watch(this);
+        DependencyPropertyDescriptor.FromProperty(InfoBar.IsOpenProperty, typeof(InfoBar))
+            .AddValueChanged(ResultBar, ResultBar_IsOpenChanged);
+        _successTimer.Tick += (_, _) =>
+        {
+            _successTimer.Stop();
+            _successDismissed = true;
+            ResultBar.IsOpen = false;
+        };
         AdvVersion.Text = SessionDiagnostics.Version;
         AboutRun.Text = $"Unblock File {SessionDiagnostics.Version} · Golabox · Licence MIT · ";
         Refresh();
@@ -228,6 +242,7 @@ public partial class MainWindow : FluentWindow
             var files = scan.BlockedFiles.ToList();
             var stopwatch = Stopwatch.StartNew();
             _results = await UnblockService.UnblockAsync(files);
+            _successDismissed = false;
             _unblocking = false;
             LogResults(_results, stopwatch.Elapsed);
 
@@ -279,6 +294,7 @@ public partial class MainWindow : FluentWindow
         EmptyPanel.Visibility = has ? Visibility.Collapsed : Visibility.Visible;
         SelectionPanel.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
         DropOutline.StrokeDashArray = has ? null : [4, 3];
+        DropZone.MinHeight = has ? 0 : 230; // grande zone d'accueil si vide, carte compacte sinon
 
         BrowseFileButton.IsEnabled = BrowseFolderButton.IsEnabled = !_unblocking;
         ClearButton.IsEnabled = RescanButton.IsEnabled = !_unblocking;
@@ -315,6 +331,7 @@ public partial class MainWindow : FluentWindow
         string status = "", detail = "", button = "Débloquer";
         bool canUnblock = false;
         bool multi = _selection?.IsMultipleFiles == true;
+        bool justUnblocked = _results?.Any(r => r.Status == FileStatus.Unblocked) == true;
 
         if (_unblocking)
         {
@@ -334,12 +351,12 @@ public partial class MainWindow : FluentWindow
 
             status = unreadable ? (IsDirectory ? "Impossible de lire ce dossier" : "Impossible de lire ce fichier")
                 : s.Canceled ? "Analyse annulée"
-                : !IsDirectory && !multi ? (blocked > 0 ? "Ce fichier est bloqué par Windows" : "Ce fichier n’est pas bloqué")
+                : !IsDirectory && !multi ? (blocked > 0 ? "Ce fichier est bloqué par Windows" : justUnblocked ? "Ce fichier n’est plus bloqué" : "Ce fichier n’est pas bloqué")
                 : blocked == 1 ? "1 fichier est actuellement bloqué par Windows"
                 : blocked > 1 ? $"{blocked:N0} fichiers sont actuellement bloqués par Windows"
                 : s.ExaminedCount == 0 ? "Ce dossier ne contient aucun fichier"
-                : IsDirectory ? "Aucun fichier n’est bloqué dans ce dossier"
-                : "Aucun de ces fichiers n’est bloqué";
+                : IsDirectory ? (justUnblocked ? "Plus aucun fichier bloqué dans ce dossier" : "Aucun fichier n’est bloqué dans ce dossier")
+                : justUnblocked ? "Ces fichiers ne sont plus bloqués" : "Aucun de ces fichiers n’est bloqué";
 
             if ((IsDirectory || multi) && s.ExaminedCount > 0)
                 detail = $"{Files(s.ExaminedCount)} {(IsDirectory ? "trouvé" : "examiné")}{(s.ExaminedCount > 1 ? "s" : "")} · {blocked:N0} marqué{(blocked > 1 ? "s" : "")} comme provenant d’Internet";
@@ -405,7 +422,7 @@ public partial class MainWindow : FluentWindow
             else if (done > 0)
             {
                 ResultBar.Severity = InfoBarSeverity.Success;
-                ResultBar.Title = $"{FilesUnblocked(done)} avec succès";
+                ResultBar.Title = done == 1 ? "Fichier débloqué avec succès" : $"{FilesUnblocked(done)} avec succès";
             }
             else
             {
@@ -413,14 +430,32 @@ public partial class MainWindow : FluentWindow
                 ResultBar.Title = already == 1 ? "Ce fichier n’avait plus de marqueur" : "Ces fichiers n’avaient plus de marqueur";
             }
             ResultBar.Message = "";
-            ResultBar.IsOpen = true;
+
+            // Seul un succès pur est fermable et temporaire.
+            bool pureSuccess = failed == 0 && done > 0;
+            ResultBar.IsClosable = pureSuccess;
+            ResultBar.IsOpen = !(pureSuccess && _successDismissed);
+            if (pureSuccess && ResultBar.IsOpen)
+            {
+                if (!_successTimer.IsEnabled) _successTimer.Start();
+            }
+            else _successTimer.Stop();
             ShowErrorsButton.Visibility = failed > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         else
         {
+            _successTimer.Stop();
             ResultBar.IsOpen = false;
             ShowErrorsButton.Visibility = Visibility.Collapsed;
         }
+    }
+
+    /// <summary>Fermeture (bouton X ou délai) : le succès ne doit pas se rouvrir au prochain Refresh().</summary>
+    private void ResultBar_IsOpenChanged(object? sender, EventArgs e)
+    {
+        if (ResultBar.IsOpen) return;
+        _successTimer.Stop();
+        _successDismissed = true;
     }
 
     private string DescribeKind() =>
@@ -493,7 +528,7 @@ public partial class MainWindow : FluentWindow
             .AppendLine($"Type : {AdvKind.Text}")
             .AppendLine($"Fichiers examinés : {AdvTotal.Text} · avec Zone.Identifier : {AdvBlocked.Text}")
             .AppendLine($"Commande équivalente : {CommandBox.Text}");
-        if (ResultBar.IsOpen) report.AppendLine($"Résultat : {ResultBar.Title}");
+        if (_results is { Count: > 0 }) report.AppendLine($"Résultat : {ResultBar.Title}");
         report.AppendLine().Append(LogBox.Text);
 
         await CopyAsync(CopyReportButton, report.ToString());
